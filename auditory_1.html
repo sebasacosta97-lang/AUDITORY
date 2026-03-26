@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AUDITORY — Asistente Inteligente de Documentos Médicos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f4f6f9;
+      --surface2: #e8edf5;
+      --accent: #1a6abf;
+      --accent2: #1db87a;
+      --accent3: #3a8fd4;
+      --text: #1a2233;
+      --muted: #5a6a85;
+      --border: rgba(26, 106, 191, 0.15);
+      --glow: rgba(26, 106, 191, 0.18);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 6%;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.5rem;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--accent); }
+
+    .nav-cta {
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      color: #ffffff !important;
+      padding: 0.5rem 1.4rem;
+      border-radius: 6px;
+      font-weight: 500 !important;
+      transition: opacity 0.2s !important;
+    }
+
+    .nav-cta:hover { opacity: 0.85; color: #ffffff !important; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8rem 6% 5rem;
+      position: relative;
+      text-align: center;
+    }
+
+    /* Gradient orbs */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(26,106,191,0.10) 0%, transparent 70%);
+      top: 10%; left: -10%;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(29,184,122,0.08) 0%, transparent 70%);
+      bottom: 10%; right: -5%;
+      animation: drift 16s ease-in-out infinite alternate-reverse;
+    }
+    .orb-3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(58,143,212,0.08) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+    }
+
+    @keyframes drift {
+      from { transform: translate(0, 0); }
+      to   { transform: translate(40px, 30px); }
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0,194,255,0.1);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.35rem 1rem;
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1.8rem;
+      animation: fadeUp 0.8s ease both;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--accent2);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.8s 0.1s ease both;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+      animation: fadeUp 0.8s 0.2s ease both;
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeUp 0.8s 0.3s ease both;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      color: #ffffff;
+      padding: 0.85rem 2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 30px rgba(26,106,191,0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(26,106,191,0.4);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      padding: 0.85rem 2rem;
+      border-radius: 8px;
+      font-weight: 400;
+      font-size: 0.95rem;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      background: rgba(0,194,255,0.05);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      padding: 2rem 6%;
+      display: flex;
+      justify-content: center;
+      gap: 4rem;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      padding: 6rem 6%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 1.2rem;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.8;
+      max-width: 560px;
+    }
+
+    /* ── ABOUT ── */
+    #quienes-somos {
+      background: var(--surface);
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .about-visual {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .about-visual::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle at 60% 40%, rgba(0,194,255,0.06) 0%, transparent 60%);
+    }
+
+    .doc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(26,106,191,0.03);
+    }
+
+    .doc-item:nth-child(1) { animation-delay: 0.1s; }
+    .doc-item:nth-child(2) { animation-delay: 0.2s; }
+    .doc-item:nth-child(3) { animation-delay: 0.3s; }
+    .doc-item:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-15px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .doc-item:hover {
+      border-color: var(--accent);
+      background: rgba(26,106,191,0.04);
+    }
+
+    .doc-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .doc-icon.blue  { background: rgba(26,106,191,0.12); }
+    .doc-icon.green { background: rgba(29,184,122,0.12); }
+    .doc-icon.purple{ background: rgba(58,143,212,0.12); }
+    .doc-icon.orange{ background: rgba(255,160,64,0.12); }
+
+    .doc-name { font-weight: 500; color: var(--text); }
+    .doc-type { font-size: 0.75rem; color: var(--muted); }
+
+    .check-tag {
+      margin-left: auto;
+      background: rgba(29,184,122,0.12);
+      color: var(--accent2);
+      font-size: 0.7rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 100px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── SERVICES ── */
+    #servicios {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 6rem 0;
+    }
+
+    .services-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 3.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .service-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .service-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s;
+    }
+
+    .service-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0,194,255,0.35);
+      box-shadow: 0 20px 60px rgba(26,106,191,0.10);
+    }
+
+    .service-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .service-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+      opacity: 0.7;
+    }
+
+    .service-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .service-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 0.7rem;
+      line-height: 1.3;
+    }
+
+    .service-card p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
+
+    /* ── HOW IT WORKS ── */
+    #como-funciona {
+      background: var(--surface);
+    }
+
+    .steps-container {
+      max-width: 900px;
+      margin: 3rem auto 0;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 29px; top: 60px;
+      width: 2px;
+      height: calc(100% - 20px);
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      opacity: 0.3;
+    }
+
+    .step-num {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(0,194,255,0.2), rgba(79,142,247,0.2));
+      border: 1px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent);
+      flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(26,106,191,0.15);
+    }
+
+    .step-content h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.4rem;
+      padding-top: 0.8rem;
+    }
+
+    .step-content p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    /* ── CUPS HIGHLIGHT ── */
+    .cups-banner {
+      background: linear-gradient(135deg, rgba(26,106,191,0.08), rgba(29,184,122,0.06));
+      border: 1px solid var(--accent);
+      border-radius: 16px;
+      padding: 2.5rem;
+      max-width: 900px;
+      margin: 3rem auto 0;
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .cups-icon-wrap {
+      font-size: 3rem;
+      flex-shrink: 0;
+    }
+
+    .cups-text h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+      color: var(--accent2);
+    }
+
+    .cups-text p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    /* ── BENEFICIOS ── */
+    #beneficios {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-top: 3rem;
+    }
+
+    .benefit-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      background: var(--surface);
+      transition: border-color 0.3s;
+    }
+
+    .benefit-item:hover { border-color: var(--accent2); }
+
+    .benefit-emoji { font-size: 1.6rem; margin-bottom: 0.8rem; display: block; }
+
+    .benefit-item h4 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .benefit-item p {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+
+    /* ── CTA ── */
+    #contacto {
+      background: var(--surface);
+      text-align: center;
+    }
+
+    .cta-box {
+      max-width: 700px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(26,106,191,0.06), rgba(29,184,122,0.04));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 4rem 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      top: -100px; left: 50%;
+      transform: translateX(-50%);
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(26,106,191,0.10) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-box h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .cta-box p {
+      color: var(--muted);
+      margin-bottom: 2rem;
+      font-size: 1rem;
+      line-height: 1.7;
+      position: relative;
+    }
+
+    .cta-form {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    .cta-form input {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1.2rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      width: 280px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .cta-form input:focus { border-color: var(--accent); }
+    .cta-form input::placeholder { color: var(--muted); }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 2.5rem 6%;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+    }
+
+    .footer-copy {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .nav-links { display: none; }
+      .stats-strip { gap: 2rem; }
+      .services-header { flex-direction: column; align-items: flex-start; }
+      .cta-box { padding: 2.5rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="logo">
+      <div class="logo-icon">🔍</div>
+      AUDITORY
+    </a>
+    <ul class="nav-links">
+      <li><a href="#quienes-somos">Nosotros</a></li>
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="#como-funciona">Cómo funciona</a></li>
+      <li><a href="#beneficios">Beneficios</a></li>
+      <li><a href="#contacto" class="nav-cta">Solicitar Demo</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="hero-inner">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Asistente Inteligente de Documentos Médicos
+      </div>
+      <h1>Auditoría médica<br /><span>sin devoluciones</span></h1>
+      <p>
+        AUDITORY analiza automáticamente órdenes médicas, facturas, autorizaciones e historias clínicas, verificando códigos CUPS para garantizar una facturación impecable desde el primer envío.
+      </p>
+      <div class="hero-btns">
+        <a href="#contacto" class="btn-primary">Solicitar Demo Gratis</a>
+        <a href="#como-funciona" class="btn-secondary">¿Cómo funciona? →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-strip">
+    <div class="stat">
+      <span class="stat-num">98%</span>
+      <span class="stat-label">Precisión en verificación</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">4</span>
+      <span class="stat-label">Tipos de documentos</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">0</span>
+      <span class="stat-label">Devoluciones por errores</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">24/7</span>
+      <span class="stat-label">Disponibilidad</span>
+    </div>
+  </div>
+
+  <!-- QUIÉNES SOMOS -->
+  <section id="quienes-somos">
+    <div class="about-grid">
+      <div>
+        <p class="section-label">Quiénes somos</p>
+        <h2 class="section-title">Tecnología que protege tu facturación médica</h2>
+        <p class="section-sub">
+          AUDITORY es una plataforma de inteligencia artificial especializada en el sector salud colombiano. Nacimos para eliminar los errores en la documentación médica que generan devoluciones costosas y retrasos en los pagos.
+        </p>
+        <br />
+        <p class="section-sub">
+          Nuestro asistente lee, interpreta y valida cada documento con un nivel de detalle que ningún proceso manual puede igualar — rápido, preciso y disponible las 24 horas.
+        </p>
+      </div>
+      <div class="about-visual">
+        <p style="font-size:0.75rem; color: var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:1.2rem;">Documentos que procesamos</p>
+        <div class="doc-list">
+          <div class="doc-item">
+            <div class="doc-icon blue">📋</div>
+            <div>
+              <div class="doc-name">Orden Médica</div>
+              <div class="doc-type">Diagnóstico · Procedimientos · Firmas</div>
+            </div>
+            <span class="check-tag">✓ Validado</span>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon green">🧾</div>
+            <div>
+              <div class="doc-name">Factura</div>
+              <div class="doc-type">Valores · Códigos · Consistencia</div>
+            </div>
+            <span class="check-tag">✓ Validado</span>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon purple">✅</div>
+            <div>
+              <div class="doc-name">Autorización Médica</div>
+              <div class="doc-type">Vigencia · Cobertura · Servicios</div>
+            </div>
+            <span class="check-tag">✓ Validado</span>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon orange">📁</div>
+            <div>
+              <div class="doc-name">Historia Clínica</div>
+              <div class="doc-type">Consistencia · Diagnósticos · Evolución</div>
+            </div>
+            <span class="check-tag">✓ Validado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICIOS -->
+  <section style="padding: 6rem 6%;">
+    <div id="servicios">
+      <div class="services-header">
+        <div>
+          <p class="section-label">Servicios</p>
+          <h2 class="section-title">Todo lo que AUDITORY hace<br />por ti</h2>
+        </div>
+        <a href="#contacto" class="btn-secondary">Ver todos →</a>
+      </div>
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-num">01</div>
+          <div class="service-icon">🔍</div>
+          <h3>Lectura Inteligente de Documentos</h3>
+          <p>Extrae automáticamente datos clave de órdenes médicas, facturas, autorizaciones e historias clínicas con IA especializada en terminología médica.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-num">02</div>
+          <div class="service-icon">🏷️</div>
+          <h3>Verificación de Códigos CUPS</h3>
+          <p>Cruza en tiempo real los códigos CUPS del documento contra la base de datos oficial, detectando errores, inconsistencias o servicios no autorizados antes de facturar.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-num">03</div>
+          <div class="service-icon">⚡</div>
+          <h3>Validación Pre-Facturación</h3>
+          <p>Analiza el conjunto completo de documentos del proceso para confirmar que todo está en regla antes del envío, eliminando las devoluciones.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-num">04</div>
+          <div class="service-icon">📊</div>
+          <h3>Reportes y Alertas</h3>
+          <p>Genera reportes detallados con los hallazgos por documento, alertando al equipo de los errores encontrados y sugiriendo correcciones específicas.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-num">05</div>
+          <div class="service-icon">🔗</div>
+          <h3>Integración con tu Sistema</h3>
+          <p>Se conecta con los sistemas de información hospitalaria (HIS) y software de facturación existentes para integrarse sin interrumpir tu flujo de trabajo.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-num">06</div>
+          <div class="service-icon">🛡️</div>
+          <h3>Auditoría y Trazabilidad</h3>
+          <p>Registra cada validación realizada con fecha, hora y resultado, garantizando trazabilidad completa de cada proceso de auditoría documental.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CÓMO FUNCIONA -->
+  <section id="como-funciona">
+    <div style="max-width:1100px; margin:0 auto;">
+      <p class="section-label">Cómo funciona</p>
+      <h2 class="section-title">De la carga del documento<br />a la factura aprobada</h2>
+
+      <div class="steps-container">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>Carga de documentos</h3>
+            <p>Sube los documentos del proceso (orden médica, autorización, historia clínica y factura) directamente en la plataforma en PDF, imagen o texto. También puedes conectar tu sistema existente vía API.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>Lectura e interpretación con IA</h3>
+            <p>AUDITORY extrae y estructura automáticamente toda la información relevante: diagnósticos, códigos, fechas, valores, autorizaciones y firmas. Sin digitación manual, sin errores humanos.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>Verificación de códigos CUPS</h3>
+            <p>El asistente cruza cada código CUPS presente en los documentos contra la tabla oficial vigente, verificando que correspondan al servicio facturado, la autorización otorgada y el diagnóstico registrado.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h3>Informe de consistencia</h3>
+            <p>Recibes un reporte claro indicando qué documentos están correctos y cuáles tienen inconsistencias, con descripción puntual de cada error y recomendación de corrección.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h3>Facturación sin devoluciones</h3>
+            <p>Con todos los documentos validados y los códigos verificados, tu equipo envía la factura con la certeza de que será aceptada en el primer intento.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CUPS BANNER -->
+      <div class="cups-banner">
+        <div class="cups-icon-wrap">🏥</div>
+        <div class="cups-text">
+          <h3>¿Qué es el código CUPS y por qué importa?</h3>
+          <p>El Código Único de Procedimientos en Salud (CUPS) es el estándar oficial en Colombia para identificar servicios y procedimientos de salud. Un código CUPS incorrecto o inconsistente con la orden médica es la principal causa de devolución de facturas por parte de las EPS e IPS. AUDITORY verifica cada uno en tiempo real.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BENEFICIOS -->
+  <section style="padding: 6rem 6%;">
+    <div id="beneficios">
+      <p class="section-label">Beneficios</p>
+      <h2 class="section-title">¿Por qué elegir AUDITORY?</h2>
+
+      <div class="benefits-grid">
+        <div class="benefit-item">
+          <span class="benefit-emoji">⚡</span>
+          <h4>Ahorro de tiempo</h4>
+          <p>Reduce horas de revisión manual a minutos con procesamiento automático e instantáneo.</p>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-emoji">💰</span>
+          <h4>Menos devoluciones</h4>
+          <p>Elimina las devoluciones por errores documentales que impactan el flujo de caja.</p>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-emoji">🎯</span>
+          <h4>Alta precisión</h4>
+          <p>IA entrenada en normativa colombiana y terminología médica local para máxima exactitud.</p>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-emoji">📈</span>
+          <h4>Mayor productividad</h4>
+          <p>Tu equipo de auditoría se enfoca en tareas de alto valor, no en revisión manual de papeles.</p>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-emoji">🔐</span>
+          <h4>Datos seguros</h4>
+          <p>Cumplimiento con la Ley 1581 de protección de datos. Información clínica siempre protegida.</p>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-emoji">🌐</span>
+          <h4>100% en la nube</h4>
+          <p>Accede desde cualquier lugar, en cualquier dispositivo, sin instalaciones ni mantenimiento.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA / CONTACTO -->
+  <section id="contacto">
+    <div class="cta-box">
+      <p class="section-label" style="justify-content:center;">Empieza hoy</p>
+      <h2>¿Listo para facturar<br /><span style="background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">sin devoluciones?</span></h2>
+      <p>Agenda una demo gratuita y te mostramos cómo AUDITORY transforma tu proceso de auditoría documental en menos de 30 minutos.</p>
+      <div class="cta-form">
+        <input type="email" placeholder="Tu correo empresarial" />
+        <a href="/cdn-cgi/l/email-protection#05666a6b716466716a456470616c716a777c2b666a68" class="btn-primary">Solicitar Demo →</a>
+      </div>
+      <p style="font-size:0.78rem; color: var(--muted); margin-top:1rem;">Sin compromiso. Respuesta en menos de 24 horas.</p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-brand">AUDITORY</span>
+    <span class="footer-copy">© 2025 AUDITORY. Todos los derechos reservados.</span>
+    <div class="footer-links">
+      <a href="#">Privacidad</a>
+      <a href="#">Términos</a>
+      <a href="#contacto">Contacto<
